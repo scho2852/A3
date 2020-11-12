@@ -23,25 +23,28 @@ def light_up(n):
     for i in range(5):
         np[i] = (colors[n])
         np.show()
-        sleep(100)
-        
+        sleep(1000)
+
 while True:
     display.clear()
 
     if button_a.is_pressed():#the device turns "on"
         display.show(Image.HAPPY)
+        print("on")
         music.play(on_note)
-        
+
         switch=1
         shake = 0
 
     while switch == 1:
         gesture = accelerometer.current_gesture()
+        print(gesture)
         if gesture == "shake":
             light_up(shake_count)
             shake_count += 1
             print("shake done")
-            
+            break
+
 
     else:
         np.clear()
