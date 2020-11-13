@@ -5,46 +5,138 @@ import music
 import neopixel
 from random import randint
 import random
-
 number = 5
-np = neopixel.NeoPixel(pin1, number)
-
-secs = 5
-switch = 0
-light_switch = 0
-on_note = ['c', 'g']
-off_note = ['g', 'c8']
+np = neopixel.NeoPixel(pin1, 30)
 shake_count = 0
+switch = 0
+on_note = ['c:1', 'g:1']
+off_note = ['g:1', 'c:1']
+completed_sound = ['c:1', 'd:1', 'e:1', 'g:1','c5:2']
 note = ['c1:4', 'e:2', 'g', 'c8']
+directions = [Image.ARROW_N, Image.ARROW_NE, Image.ARROW_NW, Image.ARROW_S, Image.ARROW_SE, Image.ARROW_SW] #make it random? 
+b_switch = 0
+star_1 = Image(
+        "00000:"
+        "00900:"
+        "09990:"
+        "00900:"
+        "00000")
+        
+star_2 = Image(
+        "90909:"
+        "09990:"
+        "99999:"
+        "09990:"
+        "90909")
+        
+def play_animation():
+    for i in range(8):
+        display.show(star_1)
+        sleep(500)
+        display.show(star_2)
+        sleep(500)
+        
+def completed_animation():
+    for i in range(4):
+        display.show(star_1)
+        sleep(300)
+        display.show(star_2)
+        sleep(300)
+            
+    
+def play_sound(n):
+    notes = ['c:1', 'd:1', 'e:1', 'f:1', 'g:1', 'a:1', 'b:1', 'c5:2']
+    music.play(notes[n])
 
-
-def light_up(n):
-    colors = [(255, 0, 0), (230, 76, 0), (255, 170, 0), (76, 239, 0), (0, 255, 255), (0, 0, 255)]
-    for i in range(5):
-        np[i] = (colors[n])
+def hsv_to_rgb(h, s, v): #from https://stackoverflow.com/questions/24852345/hsv-to-rgb-color-conversion
+    # range: h 0-1, s 0-1, v 0-1
+        if s == 0.0: v*=255; return (v, v, v)
+        i = int(h*6.) # XXX assume int() truncates!
+        f = (h*6.)-i; p,q,t = int(255*(v*(1.-s))), int(255*(v*(1.-s*f))), int(255*(v*(1.-s*(1.-f)))); v*=255; i%=6
+        if i == 0: return (v, t, p)
+        if i == 1: return (q, v, p)
+        if i == 2: return (p, v, t)
+        if i == 3: return (p, q, v)
+        if i == 4: return (t, p, v)
+        if i == 5: return (v, p, q)
+        
+def mapping(value, oriMin, oriMax, newMin, newMax): #reference 
+    return abs(((value-oriMin)/(oriMax-oriMin))*(newMax-newMin)+newMin)
+    
+def light_up():
+    
+    for i in range(3):
+        play_sound(i)
+        for x in range(5):
+            x_value = accelerometer.get_x()
+            new_x = mapping(x_value, -1000,1000, 0, 1)
+            np[x] = hsv_to_rgb(new_x,1,1)
+            np.show()
+            sleep(500)
+        
+            
+            if button_b.is_pressed():
+                print("button b")
+                b_switch = 1
+                return b_switch
+                
+        
+def rainbow():
+    rainbow = [(255, 0, 0), (230, 76, 0), (255, 170, 0), (76, 239, 0), (0, 255, 255), (0, 0, 255)]
+    for z in range(5):
+        np[z] = (rainbow[z])
+        #np[z] = (255,255,255)
         np.show()
-        sleep(1000)
+    print(z)
+
 
 while True:
+    print("home")
     display.clear()
+    #np.clear()
+ 
 
     if button_a.is_pressed():#the device turns "on"
+        b_switch = 0
         display.show(Image.HAPPY)
-        print("on")
         music.play(on_note)
-
         switch=1
-        shake = 0
-
-    while switch == 1:
-        gesture = accelerometer.current_gesture()
-        print(gesture)
-        if gesture == "shake":
-            light_up(shake_count)
-            shake_count += 1
-            print("shake done")
-            break
+        shake_count = 0
+        display.show(Image.HAPPY)
+        sleep(1000)
 
 
-    else:
+    if button_b.was_pressed():
+        display.show(Image.HAPPY)
+        b_switch = 1
+        
+    if b_switch == 1:
+        display.show(Image.SAD)
+        music.play(off_note)
         np.clear()
+        display.clear
+        
+        #print("turned off")
+        
+    while switch == 1:
+        print("device is on")
+        print(b_switch)
+        if shake_count == 6:
+            music.play(completed_sound)
+            print("completed")
+            switch = 0
+            rainbow()
+            completed_animation()
+            break
+        elif b_switch == 1:
+            print("b switch is 1")
+            switch = 1
+            
+            
+        elif b_switch == 0 and accelerometer.was_gesture("shake"):
+                display.show(directions[shake_count])
+                print("shook!")
+                light_up()
+                shake_count += 1
+
+    
